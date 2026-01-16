@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>感動に切り殺される | 管理人の日記</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            color: #333;
+            font-family: serif;
+            line-height: 1.8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+            transition: filter 0.5s;
+            margin: 0;
+            min-height: 100vh;
+        }
+        body.inverted {
+            filter: invert(1) hue-rotate(180deg);
+            background-image: url('bg.jpg');
+            background-repeat: repeat;
+            background-size: 50px 50px;
+        }
+        .container {
+            width: 80%;
+            max-width: 650px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border: 1px solid #ccc;
+            min-height: 500px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h2 { font-size: 18px; color: #666; }
+        .date { font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; }
+        .content { 
+            margin-bottom: 40px; 
+            flex-grow: 1;
+            white-space: pre-wrap; 
+            word-break: break-all;
+            font-size: 1.05rem;
+        }
+        .navigation { text-align: right; }
+        button {
+            padding: 10px 25px;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #333;
+            font-family: serif;
+        }
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f0f0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>感動に切り殺される</h1>
+        <button onclick="startGame()">管理人の日記を読む</button>
+    </div>
+
+    <h1>感動に切り殺される</h1>
+    <h2>管理人の日記</h2>
+
+    <div class="container">
+        <div id="diary-area">
+            <p class="date" id="date-display"></p>
+            <div class="content" id="content-display"></div>
+            <div class="navigation">
+                <button id="next-button" onclick="nextDay()">次の日へ</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bgm" loop>
+        <source src="bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const bgm = document.getElementById('bgm');
+        
+        const diaryEntries = [
+            { date: "4月 1日", text: "今日からこの屋敷の管理を任された。都会の喧騒を離れ、静かな環境で自分を見つめ直すには最高の場所だ。空気も澄んでいる。", speed: 1.0 },
+            { date: "4月 2日", text: "近所の人が野菜を持ってきてくれた。この辺りは夜になると本当に真っ暗になるから気をつけろと言われた。少し大げさな気がする。", speed: 1.0 },
+            { date: "4月 3日", text: "庭の掃除。古い、錆びついた鍵を拾った。どこにも合わないのに、なぜか手放すのが惜しい気がして引き出しに仕舞った。", speed: 1.0 },
+            { date: "4月 4日", text: "廊下でパチパチという音がする。古い木造家屋特有の家鳴りだろうか。少し耳障りだが、慣れれば問題ないだろう。", speed: 1.0 },
+            { date: "4月 5日", text: "夜中、視線を感じて目が覚めた。窓の外は霧が深く、自分の顔がガラスにぼんやり映っているだけだった。気のせいだ。", speed: 1.0 },
+            { date: "4月 6日", text: "朝起きると、机に仕舞ったはずの鍵が枕元に置いてあった。無意識のうちに自分で出したのだろうか。少し疲れているのかもしれない。", speed: 1.0 },
+            { date: "4月 7日", text: "屋敷の地下へと続く隠し扉を見つけた。昨日の鍵を差し込むと、重々しい音を立てて開いた。カビ臭い風が吹き抜けた。", speed: 1.0 },
+            { date: "4月 8日", text: "地下室の奥から水の滴る音がする。湿気がひどい。壁には何かを引っ掻いたような跡が無数にある。前の管理人の仕業か？", speed: 1.0 },
+            { date: "4月 9日", text: "夢を見た。誰かが私の耳元で、絶え間なく「感動だ」と囁き続けていた。起きた後も、その感触が肌に残っているようで気持ち悪い。", speed: 1.0 },
+            { date: "4月 10日", text: "地下室に椅子を置いた。あそこに座っていると、なぜか心が落ち着くのだ。暗闇の中に誰かが潜んでいるような、そんな安心感がある。", speed: 0.7 },
+            { date: "4月 11日", text: "音が大きくなっている。廊下を歩くパチパチという音が、まるですぐ後ろを誰かがついてきているように聞こえる。振り返っても誰もいない。", speed: 0.7 },
+            { date: "4月 12日", text: "鏡の中の自分と目が合わない。私が目を逸らした後に、鏡の中の私だけがこちらをじっと見つめているような違和感。吐き気がする。", speed: 0.6 },
+            { date: "4月 13日", text: "日記に心当たりのない記述がある。私の字で「たすけて」と一行だけ。書いた記憶は一切ない。睡眠薬を飲むことにした。", speed: 0.6 },
+            { date: "4月 14日", text: "腕に覚えのない痣。誰かに強く掴まれたような指の跡だ。地下室にいる時、私は一体何をしているのだろうか。", speed: 0.5 },
+            { date: "4月 15日", text: "外へ出ようとしたが、玄関の鍵が開かない。内側から釘が打たれている。誰がこんなことを？ 私か？ 釘を打った記憶がないんだ。", speed: 0.5 },
+            { date: "4月 16日", text: "パチパチパチパチパチパチ。音が止まらない。頭の中がこの音で埋め尽くされていく。思考が削り取られていくのがわかる。", speed: 0.4 },
+            { date: "4月 17日", text: "「感動に切り殺される」。この言葉が壁にびっしりと書かれているのを見つけた。赤いインクではない。もっと生臭い、乾いた何かの色だ。", speed: 0.4 },
+            { date: "4月 18日", text: "時計が止まった。太陽が昇らない。ずっと夜のままだ。暗闇の中で、あいつが私のすぐそばに立って、幸せそうに笑っているのがわかる。", speed: 0.3 },
+            { date: "4月 19日", text: "あいつは私だ。裂けた口から、私の声で「おめでとう」と言った。私は、あいつに手を差し伸べた。あいつの肌は冷たくて、気持ちがいい。", speed: 0.3 },
+            { date: "4月 20日", text: "いたいたいたいたいたいたいたいたいたいたいたいたいたいたいた！！ どこにいてもあいつがいる！ 壁の向こう、天井の裏、私の中に！！", speed: 2.0 },
+            { date: "4月 21日", text: "笑いが止まらない。自分の指を一本ずつ折るたびに、美しすぎて涙が出る。これが感動か。これが私を殺してくれるのか。", speed: 2.1 },
+            { date: "4月 22日", text: "目が足りない。世界をもっと見たい。もっと細かく切り刻んで、断面の美しさをこの眼球に焼き付けたい。あいつがナイフをくれた。", speed: 2.2 },
+            { date: "4月 23日", text: "壁を叩く音と私の心臓が同期している。加速していく。もうすぐ、もうすぐで私は完成する。屋敷が、肉の呼吸を始めた。", speed: 2.3 },
+            { date: "4月 24日", text: "明日、世界が終わる。いや、私が始まるんだ。あいつと私が溶け合って、一つの感動になる。もう怖いものなんて何もない。", speed: 2.5 },
+            { date: "4月 25日", text: "あ̸あ̸あ̸あ̸あ̸あ̸。世̸界̸が̸、あ̸っ̸た̸か̸い̸。赤̸い̸雪̸。視̸界̸が̸、裏̸返̸る̸。な̸に̸も̸か̸も̸が̸、美̸し̸い̸。", speed: 0.2, invert: true },
+            { date: "4月 26日", text: "影̸が̸、私̸を̸撫̸で̸て̸い̸る̸。画̸面̸の̸向̸こ̸う̸で̸、あ̸な̸た̸が̸見̸て̸い̸る̸。そ̸の̸瞳̸、そ̸の̸指̸。全̸部̸、切̸り̸取̸っ̸て̸、飾̸り̸た̸い̸。", speed: 0.15, invert: true },
+            { date: "4月 27日", text: "心̸臓̸が̸、廊̸下̸を̸這̸っ̸て̸い̸る̸。パ̸チ̸パ̸チ̸、パ̸チ̸パ̸チ̸。鼓̸膜̸が̸破̸け̸る̸音̸が̸、な̸ん̸て̸心̸地̸よ̸い̸旋̸律̸な̸ん̸だ̸ろ̸う̸。", speed: 0.1, invert: true },
+            { date: "4月 28日", text: "管̸理̸人̸。私̸。あ̸い̸つ̸。境̸界̸が̸な̸い̸。あ̸な̸た̸も̸、も̸う̸こ̸っ̸ち̸側̸だ̸よ̸ね̸？ 感̸動̸だ̸。感̸動̸だ̸。感̸動̸だ̸。", speed: 0.08, invert: true },
+            { date: "4月 29日", text: "…………………………………………。…………タ̸ス̸ケ̸テ̸……な̸ん̸て̸、言̸わ̸な̸い̸。美̸し̸い̸ま̸ま̸、消̸え̸て̸い̸く̸。", speed: 0.07, invert: true },
+            { date: "4月 30日", text: "次̸は̸、お̸前̸だ̸。今̸、う̸し̸ろ̸に̸い̸る̸よ̸。振̸り̸返̸っ̸た̸瞬̸間̸に̸、あ̸な̸た̸も̸、感̸動̸に̸切̸り̸殺̸さ̸れ̸る̸。", speed: 0.06, invert: true }
+        ];
+
+        let currentIndex = 0;
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            updateDisplay();
+            bgm.play();
+        }
+
+        function updateDisplay() {
+            const entry = diaryEntries[currentIndex];
+            document.getElementById('date-display').innerText = "202X年 " + entry.date;
+            document.getElementById('content-display').innerText = entry.text;
+            bgm.playbackRate = entry.speed;
+
+            if (entry.invert) {
+                document.body.classList.add('inverted');
+            } else {
+                document.body.classList.remove('inverted');
+            }
+            window.scrollTo(0,0);
+        }
+
+        function nextDay() {
+            currentIndex++;
+            if (currentIndex < diaryEntries.length) {
+                updateDisplay();
+            } else {
+                document.getElementById('content-display').innerText = "感 動 し ま し た か ？\n\nう し ろ に い る よ";
+                document.getElementById('next-button').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
