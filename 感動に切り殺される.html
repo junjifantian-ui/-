@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>感動に切り殺される</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            color: #333;
+            font-family: serif;
+            line-height: 1.8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+            transition: filter 0.5s;
+            margin: 0;
+            min-height: 100vh;
+        }
+        /* 25日目以降の反転と背景タイル */
+        body.inverted {
+            filter: invert(1) hue-rotate(180deg);
+            background-image: url('bg.jpg'); /* ここにタイル画像を配置 */
+            background-repeat: repeat;
+            background-size: 50px 50px;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.9); /* タイルの上でも読みやすいよう少し不透明に */
+            padding: 40px;
+            border: 1px solid #ccc;
+            min-height: 400px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h2 { font-size: 18px; color: #666; }
+        .date { font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; }
+        .content { margin-bottom: 40px; min-height: 200px; white-space: pre-wrap; word-break: break-all; }
+        .navigation { text-align: right; }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #333;
+        }
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f0f0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>感動に切り殺される</h1>
+        <button onclick="startGame()">管理人の日記を読む</button>
+    </div>
+
+    <h1>感動に切り殺される</h1>
+    <h2>管理人の日記</h2>
+
+    <div class="container">
+        <div id="diary-area">
+            <p class="date" id="date-display"></p>
+            <div class="content" id="content-display"></div>
+            <div class="navigation">
+                <button id="next-button" onclick="nextDay()">次の日へ</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bgm" loop>
+        <source src="bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const bgm = document.getElementById('bgm');
+        
+        const diaryEntries = [
+            { date: "4月 1日", text: "今日からこの場所の管理を任された。静かで良いところだ。", speed: 1.0 },
+            { date: "4月 2日", text: "近所の人が挨拶に来てくれた。夜は真っ暗になるらしい。", speed: 1.0 },
+            { date: "4月 3日", text: "庭の掃除。古い鍵を拾った。どこにも合わない。", speed: 1.0 },
+            { date: "4月 4日", text: "廊下でパチパチという音がする。乾燥だろうか。", speed: 1.0 },
+            { date: "4月 5日", text: "夜中、視線を感じて目が覚めた。窓の外には誰もいない。", speed: 1.0 },
+            { date: "4月 6日", text: "鍵が机の上に移動していた。私は触っていない。", speed: 1.0 },
+            { date: "4月 7日", text: "管理室の奥に地下室があることに気づいた。扉は重い。", speed: 1.0 },
+            { date: "4月 8日", text: "地下から湿った臭いがする。鍵、ここのかもしれない。", speed: 1.0 },
+            { date: "4月 9日", text: "夢を見た。誰かが私の名前を呼んでいた。", speed: 1.0 },
+            { date: "4月 10日", text: "地下室の鍵が開いた。中は暗い。音がした。", speed: 0.7 },
+            { date: "4月 11日", text: "音が止まらない。耳を塞いでも頭の中で鳴っている。", speed: 0.7 },
+            { date: "4月 12日", text: "鏡の中の自分と、一瞬目が合わなかった気がした。", speed: 0.6 },
+            { date: "4月 13日", text: "昨日の私が、この日記に「逃げろ」と書いてあった。覚えがない。", speed: 0.6 },
+            { date: "4月 14日", text: "腕に覚えのない痣がある。指の跡のようだ。", speed: 0.5 },
+            { date: "4月 15日", text: "外に出ようとしたが、玄関が開かない。内側から釘を打ったのは誰だ？", speed: 0.5 },
+            { date: "4月 16日", text: "パチパチパチパチパチパチ。音が大きくなっている。", speed: 0.4 },
+            { date: "4月 17日", text: "感動に切り殺される。その意味が少しわかってきた。", speed: 0.4 },
+            { date: "4月 18日", text: "もう、夜が明けない。時計は止まったままだ。", speed: 0.3 },
+            { date: "4月 19日", text: "あいつが、角に立っている。", speed: 0.3 },
+            { date: "4月 20日", text: "いたいたいたいたいたいたいたいたいたいたいた！！", speed: 2.0 },
+            { date: "4月 21日", text: "笑っている笑っている笑っている笑っている笑っている。", speed: 2.1 },
+            { date: "4月 22日", text: "目が足りない。もっと見たい。もっと見られたい。", speed: 2.2 },
+            { date: "4月 23日", text: "壁を叩く音がする。私の鼓動より速い。", speed: 2.3 },
+            { date: "4月 24日", text: "明日。明日、全部終わる。感動する。", speed: 2.5 },
+            { date: "4月 25日", text: "あ̸あ̸あ̸あ̸あ̸あ̸。世̸界̸が̸裏̸返̸っ̸た̸。", speed: 0.2, invert: true }, // ここから低速
+            { date: "4月 26日", text: "視̸界̸が̸眩̸し̸い̸。影̸が̸私̸を̸見̸て̸い̸る̸。あ̸い̸つ̸が̸笑̸う̸。あ̸い̸つ̸が̸私̸だ̸。", speed: 0.15, invert: true },
+            { date: "4月 27日", text: "心̸臓̸が̸痛̸い̸。切̸り̸刻̸ま̸れ̸て̸い̸る̸。感̸動̸だ̸。感̸動̸だ̸。感̸動̸だ̸。感̸動̸だ̸。", speed: 0.1, invert: true },
+            { date: "4月 28日", text: "管̸理̸人̸は̸私̸で̸は̸な̸か̸っ̸た̸。私は̸、肉̸塊̸だ̸。あ̸あ̸あ̸あ̸あ̸あ̸あ̸あ̸あ̸あ̸あ̸あ̸あ̸あ̸", speed: 0.08, invert: true },
+            { date: "4月 29日", text: "…………………………………………。………………タ̸ス̸ケ̸テ̸………………", speed: 0.07, invert: true },
+            { date: "4月 30日", text: "次̸は̸お̸前̸の̸番̸だ̸。お̸前̸の̸感̸動̸を̸私̸に̸頂̸戴̸。う̸し̸ろ̸。う̸し̸ろ̸。う̸し̸ろ̸。", speed: 0.06, invert: true }
+        ];
+
+        let currentIndex = 0;
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            updateDisplay();
+            bgm.play();
+        }
+
+        function updateDisplay() {
+            const entry = diaryEntries[currentIndex];
+            document.getElementById('date-display').innerText = "202X年 " + entry.date;
+            document.getElementById('content-display').innerText = entry.text;
+            
+            // BGMの速度を変更
+            bgm.playbackRate = entry.speed;
+
+            // 反転とタイル背景の適用
+            if (entry.invert) {
+                document.body.classList.add('inverted');
+            } else {
+                document.body.classList.remove('inverted');
+            }
+        }
+
+        function nextDay() {
+            currentIndex++;
+            if (currentIndex < diaryEntries.length) {
+                updateDisplay();
+            } else {
+                document.getElementById('content-display').innerText = "感 動 し ま し た か ？";
+                document.getElementById('next-button').style.display = 'none';
+                // 最後は音を止めず、超スローな低音を流しっぱなしにすると怖いです
+            }
+        }
+    </script>
+</body>
+</html>
